@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mock</title>
+  </head>
+  <body>
+    <div id="liveView" class="videoView">
+      <button id="webcamButton">ENABLE WEBCAM</button>
+      <div id="webcamContainer">
+        <video id="webcam" autoplay playsinline></video>
+        <canvas class="output_canvas" id="output_canvas"></canvas>
+      </div>
+    </div>
+    <h2>カメラ</h2>
+    <div id="threeScene">
+      <canvas class="three_canvas" id="three_canvas"></canvas>
+    </div>
+
+    <h2>動画</h2>
+    <div id="staticContainer">
+      <video id="video_" src="/hand.mp4" loop playsinline></video>
+      <canvas class="output_canvas_" id="output_canvas_"></canvas>
+    </div>
+    <h2>画像</h2>
+    <div class="detectOnClick">
+      <img
+        src="https://images.pexels.com/photos/5525050/pexels-photo-5525050.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
+        width="100%"
+        crossorigin="anonymous"
+        title="Click to get detection!"
+      />
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

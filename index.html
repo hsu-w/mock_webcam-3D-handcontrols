@@ -13,17 +13,21 @@
         <canvas class="output_canvas" id="output_canvas"></canvas>
       </div>
     </div>
+    <div id="interference">
+      <h2>1フレームあたりの推論時間</h2>
+      <span id="interference_value"></span>
+    </div>
     <h2>カメラ</h2>
     <div id="threeScene">
       <canvas class="three_canvas" id="three_canvas"></canvas>
     </div>
 
-    <h2>動画</h2>
+    <h2>動画（クリックして再生＆検知する）</h2>
     <div id="staticContainer">
       <video id="video_" src="/hand.mp4" loop playsinline></video>
       <canvas class="output_canvas_" id="output_canvas_"></canvas>
     </div>
-    <h2>画像</h2>
+    <h2>画像（クリックして検知する）</h2>
     <div class="detectOnClick">
       <img
         src="https://images.pexels.com/photos/5525050/pexels-photo-5525050.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"

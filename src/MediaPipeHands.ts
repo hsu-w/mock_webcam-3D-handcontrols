@@ -2,13 +2,27 @@ import {
   HandLandmarker,
   FilesetResolver,
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
+import { motionValue, springValue } from "motion";
+import type { MotionValue } from "motion";
 import type { HandLandmarkerResult } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
 import { ScenesManager } from "./ScenesManager.ts";
 import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
 import { HAND_CONNECTIONS } from "@mediapipe/hands";
+import * as dat from "dat.gui";
 type RunningMode = NonNullable<
   Parameters<typeof HandLandmarker.createFromOptions>[1]["runningMode"]
 >;
+const mv = (v: number) => motionValue(v);
+const sv = (v: MotionValue<number>) => springValue(v);
+type PozData = {
+  pointerX: ReturnType<typeof mv>;
+  pointerY: ReturnType<typeof mv>;
+  pointerZ: ReturnType<typeof mv>;
+  x: ReturnType<typeof sv>;
+  y: ReturnType<typeof sv>;
+  z: ReturnType<typeof sv>;
+  targetPosition: typeof ScenesManager.targetPosition;
+};
 export class MediaPipeHands {
   constructor() {
     let handLandmarker: HandLandmarker | undefined = undefined;
@@ -16,6 +30,16 @@ export class MediaPipeHands {
     let enableWebcamButton: HTMLButtonElement | null = null;
     let webcamRunning: Boolean = false;
     let video_State: boolean = false;
+    let pozDataArr: Array<PozData> = [];
+
+    const gui = new dat.GUI();
+    const param = {
+      z: 10,
+    };
+    gui.add(param, "z", -1000, 1000, 0.01);
+    const interference_value = document.querySelector(
+      "#interference_value",
+    ) as HTMLDivElement;
     const createHandLandmarker = async () => {
       const vision = await FilesetResolver.forVisionTasks(
         "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm",
@@ -76,7 +100,7 @@ export class MediaPipeHands {
       for (const landmarks of handLandmarkerResult.landmarks) {
         drawConnectors(cxt, landmarks, HAND_CONNECTIONS, {
           color: "#00FF00",
-          lineWidth: 5,
+          lineWidth: 3,
         });
         drawLandmarks(cxt, landmarks, { color: "#FF0000", lineWidth: 1 });
       }
@@ -105,6 +129,21 @@ export class MediaPipeHands {
       "output_canvas",
     ) as HTMLCanvasElement;
     const canvasCtx = canvasElement.getContext("2d");
+
+    for (let l = 0; l < 21; l++) {
+      const pointerX = motionValue(0);
+      const pointerY = motionValue(0);
+      const pointerZ = motionValue(0);
+      pozDataArr.push({
+        pointerX,
+        pointerY,
+        pointerZ,
+        x: springValue(pointerX, { stiffness: 80 }),
+        y: springValue(pointerY, { stiffness: 80 }),
+        z: springValue(pointerY, { stiffness: 80 }),
+        targetPosition: ScenesManager.targetPosition,
+      });
+    }
 
     const canvasElement_ = document.getElementById(
       "output_canvas_",
@@ -150,6 +189,9 @@ export class MediaPipeHands {
     let lastVideoTime_ = -1;
     let results: HandLandmarkerResult | undefined;
     let results_: HandLandmarkerResult | undefined;
+    let t0 = 0;
+    let t1 = 0;
+    // const depthScale = 2.0;
     // console.log(video);
     async function predictWebcam() {
       videoContainer.style.aspectRatio = (
@@ -173,7 +215,17 @@ export class MediaPipeHands {
       if (lastVideoTime !== video.currentTime) {
         lastVideoTime = video.currentTime;
         if (!handLandmarker) return;
+        t0 = performance.now();
         results = handLandmarker.detectForVideo(video, startTimeMs);
+        t1 = performance.now();
+        interference_value.innerHTML = (t1 - t0).toString();
+        if (t1 - t0 > 20) {
+          interference_value.dataset.level = "orange";
+        } else if (t1 - t0 > 30) {
+          interference_value.dataset.level = "red";
+        } else {
+          interference_value.dataset.level = "lightblue";
+        }
       }
 
       if (!canvasCtx) return;
@@ -184,21 +236,46 @@ export class MediaPipeHands {
         for (const landmarks of results.landmarks) {
           drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
             color: "#00FF00",
-            lineWidth: 5,
+            lineWidth: 3,
           });
           drawLandmarks(canvasCtx, landmarks, {
             color: "#FF0000",
-            lineWidth: 2,
+            lineWidth: 1,
           });
         }
 
         if (results.landmarks.length == 1) {
           for (let l = 0; l < 21; l++) {
-            ScenesManager.handArr[l].position.x =
-              -1 * (results.landmarks[0][l].x + 0.5);
-            ScenesManager.handArr[l].position.y =
-              -1 * (results.landmarks[0][l].y + 0.5);
-            ScenesManager.handArr[l].position.z = 1 * results.landmarks[0][l].z;
+            // pozDataArr[l].pointerX.set(-1 * (results.landmarks[0][l].x - 0.5));
+            // pozDataArr[l].pointerY.set(-1 * (results.landmarks[0][l].y - 0.5));
+            // pozDataArr[l].pointerZ.set(depthScale * results.landmarks[0][l].z);
+            // ScenesManager.handArr[l].position.x = pozDataArr[l].x.get();
+            // ScenesManager.handArr[l].position.y = pozDataArr[l].y.get();
+            // ScenesManager.handArr[l].position.z = pozDataArr[l].z.get();
+
+            pozDataArr[l].targetPosition.set(
+              -2 * (results.landmarks[0][l].x - 0.5),
+              -2 * (results.landmarks[0][l].y - 0.5),
+              param.z * results.landmarks[0][l].z,
+            );
+            // ScenesManager.handArr[l].position.set(
+            //   -2 * (results.landmarks[0][l].x - 0.5),
+            //   -2 * (results.landmarks[0][l].y - 0.5),
+            //   depthScale * results.landmarks[0][l].z,
+            // );
+            ScenesManager.handArr[l].position.lerp(
+              pozDataArr[l].targetPosition,
+              0.5,
+            );
+            // ScenesManager.handArr[l].position.x =
+            //   -1 * (results.landmarks[0][l].x - 0.5);
+            // ScenesManager.handArr[l].position.y =
+            //   -1 * (results.landmarks[0][l].y - 0.5);
+            // ScenesManager.handArr[l].position.z =
+            //   param.z * results.landmarks[0][l].z;
+            if (l == 20) {
+              console.log(param.z * results.landmarks[0][l].z);
+            }
           }
         }
       }
@@ -242,11 +319,11 @@ export class MediaPipeHands {
         for (const landmarks of results_.landmarks) {
           drawConnectors(canvasCtx_, landmarks, HAND_CONNECTIONS, {
             color: "#00FF00",
-            lineWidth: 5,
+            lineWidth: 3,
           });
           drawLandmarks(canvasCtx_, landmarks, {
             color: "#FF0000",
-            lineWidth: 2,
+            lineWidth: 1,
           });
         }
       }

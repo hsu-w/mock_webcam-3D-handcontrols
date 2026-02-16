@@ -1,4 +1,6 @@
 import * as THREE from "three";
+const vec3 = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
+type TargetPosition = ReturnType<typeof vec3>;
 export class ScenesManager {
   static scene: THREE.Scene;
   static camera: THREE.PerspectiveCamera;
@@ -7,8 +9,10 @@ export class ScenesManager {
   static container: HTMLButtonElement | null = null;
   static threeCanvas: HTMLButtonElement | null = null;
   static handArr: Array<THREE.Mesh> = [];
-  static nnn: number = 0;
+  static targetPosition: TargetPosition;
+
   static setup() {
+    ScenesManager.targetPosition = new THREE.Vector3(0, 0, 0);
     ScenesManager.container = document.querySelector("#threeScene");
     ScenesManager.threeCanvas = document.querySelector("#three_canvas");
     if (!ScenesManager.container || !ScenesManager.threeCanvas) return;
@@ -18,8 +22,8 @@ export class ScenesManager {
       45,
       ScenesManager.container.clientWidth /
         ScenesManager.container.clientHeight,
-      1,
-      2000,
+      0.1,
+      1000,
     );
     ScenesManager.camera.position.set(0, 0, 5);
     ScenesManager.clock = new THREE.Clock();
@@ -37,7 +41,7 @@ export class ScenesManager {
     // ScenesManager.scene.add(ambLight);
 
     for (let i = 0; i < 21; i++) {
-      const geometry = new THREE.SphereGeometry(0.01, 8, 8);
+      const geometry = new THREE.SphereGeometry(0.05, 8, 8);
       const material = new THREE.MeshNormalMaterial();
       ScenesManager.handArr[i] = new THREE.Mesh(geometry, material);
       ScenesManager.scene.add(ScenesManager.handArr[i]);

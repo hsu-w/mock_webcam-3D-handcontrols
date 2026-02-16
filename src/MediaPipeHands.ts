@@ -5,7 +5,6 @@ import {
 import { motionValue, springValue } from "motion";
 import type { MotionValue } from "motion";
 import type { HandLandmarkerResult } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
-import { ScenesManager } from "./ScenesManager.ts";
 import { drawConnectors, drawLandmarks } from "@mediapipe/drawing_utils";
 import { HAND_CONNECTIONS } from "@mediapipe/hands";
 import * as dat from "dat.gui";
@@ -21,7 +20,6 @@ type PozData = {
   x: ReturnType<typeof sv>;
   y: ReturnType<typeof sv>;
   z: ReturnType<typeof sv>;
-  targetPosition: typeof ScenesManager.targetPosition;
 };
 export class MediaPipeHands {
   constructor() {
@@ -102,7 +100,7 @@ export class MediaPipeHands {
           color: "#00FF00",
           lineWidth: 3,
         });
-        drawLandmarks(cxt, landmarks, { color: "#FF0000", lineWidth: 1 });
+        drawLandmarks(cxt, landmarks, { color: "#FF0000", lineWidth: 0.5 });
       }
     };
     for (let i = 0; i < imageContainers.length; i++) {
@@ -113,8 +111,6 @@ export class MediaPipeHands {
     /********************************************************************
     // Demo 2: Continuously grab image from webcam stream and detect it.
     ********************************************************************/
-
-    ScenesManager.setup();
 
     const videoContainer = document.getElementById(
       "webcamContainer",
@@ -141,7 +137,6 @@ export class MediaPipeHands {
         x: springValue(pointerX, { stiffness: 80 }),
         y: springValue(pointerY, { stiffness: 80 }),
         z: springValue(pointerY, { stiffness: 80 }),
-        targetPosition: ScenesManager.targetPosition,
       });
     }
 
@@ -175,6 +170,15 @@ export class MediaPipeHands {
       navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
         video.srcObject = stream;
         video.addEventListener("loadeddata", predictWebcam);
+
+        const videoTrack = stream.getVideoTracks()[0];
+
+        // Get the current settings of the video track
+        const settings = videoTrack.getSettings();
+
+        // Extract the actual width and height
+        const { width, height } = settings;
+        // console.log(width, height);
       });
     };
     if (hasGetUserMedia()) {
@@ -191,19 +195,19 @@ export class MediaPipeHands {
     let results_: HandLandmarkerResult | undefined;
     let t0 = 0;
     let t1 = 0;
-    // const depthScale = 2.0;
-    // console.log(video);
+    let c = 0;
     async function predictWebcam() {
-      videoContainer.style.aspectRatio = (
-        video.videoWidth / video.videoHeight
-      ).toString();
-      video.style.aspectRatio = (
-        video.videoWidth / video.videoHeight
-      ).toString();
-      // canvasElement.style.width = video.videoWidth.toString();
-      // canvasElement.style.height = video.videoHeight.toString();
-      // canvasElement.width = video.videoWidth;
-      // canvasElement.height = video.videoHeight;
+      // videoContainer.style.aspectRatio = (
+      //   video.videoWidth / video.videoHeight
+      // ).toString();
+      // video.style.aspectRatio = (
+      //   video.videoWidth / video.videoHeight
+      // ).toString();
+
+      canvasElement.style.width = video.videoWidth.toString();
+      canvasElement.style.height = video.videoHeight.toString();
+      canvasElement.width = video.videoWidth;
+      canvasElement.height = video.videoHeight;
 
       // Now let's start detecting the stream.
       if (runningMode === "IMAGE") {
@@ -232,53 +236,39 @@ export class MediaPipeHands {
       canvasCtx.save();
       canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
       if (!results) return;
-      if (results.landmarks) {
+      if (results.landmarks.length == 2) {
+        console.log(2);
+      }
+      if (results.landmarks && results.landmarks.length == 2) {
         for (const landmarks of results.landmarks) {
-          drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
-            color: "#00FF00",
-            lineWidth: 3,
-          });
-          drawLandmarks(canvasCtx, landmarks, {
-            color: "#FF0000",
-            lineWidth: 1,
-          });
-        }
-
-        if (results.landmarks.length == 1) {
-          for (let l = 0; l < 21; l++) {
-            // pozDataArr[l].pointerX.set(-1 * (results.landmarks[0][l].x - 0.5));
-            // pozDataArr[l].pointerY.set(-1 * (results.landmarks[0][l].y - 0.5));
-            // pozDataArr[l].pointerZ.set(depthScale * results.landmarks[0][l].z);
-            // ScenesManager.handArr[l].position.x = pozDataArr[l].x.get();
-            // ScenesManager.handArr[l].position.y = pozDataArr[l].y.get();
-            // ScenesManager.handArr[l].position.z = pozDataArr[l].z.get();
-
-            pozDataArr[l].targetPosition.set(
-              -2 * (results.landmarks[0][l].x - 0.5),
-              -2 * (results.landmarks[0][l].y - 0.5),
-              param.z * results.landmarks[0][l].z,
-            );
-            // ScenesManager.handArr[l].position.set(
-            //   -2 * (results.landmarks[0][l].x - 0.5),
-            //   -2 * (results.landmarks[0][l].y - 0.5),
-            //   depthScale * results.landmarks[0][l].z,
-            // );
-            ScenesManager.handArr[l].position.lerp(
-              pozDataArr[l].targetPosition,
-              0.5,
-            );
-            // ScenesManager.handArr[l].position.x =
-            //   -1 * (results.landmarks[0][l].x - 0.5);
-            // ScenesManager.handArr[l].position.y =
-            //   -1 * (results.landmarks[0][l].y - 0.5);
-            // ScenesManager.handArr[l].position.z =
-            //   param.z * results.landmarks[0][l].z;
-            if (l == 20) {
-              console.log(param.z * results.landmarks[0][l].z);
-            }
+          c++;
+          // drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
+          //   color: "#00FF00",
+          //   lineWidth: 0.5,
+          // });
+          // drawLandmarks(canvasCtx, landmarks, {
+          //   color: "#FF0000",
+          //   lineWidth: 0.5,
+          // });
+          canvasCtx.beginPath();
+          if (c == 1) {
+            canvasCtx.strokeStyle = "green";
+          } else if (c == 2) {
+            canvasCtx.strokeStyle = "blue";
           }
+          // arc(x, y, radius, startAngle, endAngle, counterclockwise)
+          canvasCtx.arc(
+            landmarks[9].x * canvasElement.width,
+            landmarks[9].y * canvasElement.height,
+            30,
+            0,
+            2 * Math.PI,
+            true,
+          );
+          canvasCtx.stroke();
         }
       }
+      c = 0;
       canvasCtx.restore();
 
       // Call this function again to keep predicting when the browser is ready.
@@ -319,11 +309,11 @@ export class MediaPipeHands {
         for (const landmarks of results_.landmarks) {
           drawConnectors(canvasCtx_, landmarks, HAND_CONNECTIONS, {
             color: "#00FF00",
-            lineWidth: 3,
+            lineWidth: 0.5,
           });
           drawLandmarks(canvasCtx_, landmarks, {
             color: "#FF0000",
-            lineWidth: 1,
+            lineWidth: 0.5,
           });
         }
       }

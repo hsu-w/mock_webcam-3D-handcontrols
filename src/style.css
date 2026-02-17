@@ -140,3 +140,27 @@ h2 {
     background-color: lightblue;
   }
 }
+#scoreBox {
+  position: absolute;
+  width: fit-content;
+  height: auto;
+  right: 0;
+  bottom: 0;
+  background-color: #333;
+  text-align: center;
+  padding: 10px;
+  h2 {
+    display: inline-block;
+    color: #fff;
+    font-weight: 700;
+    font-size: 30px;
+    color: #fff;
+  }
+}
+#score {
+  display: inline-block;
+  color: #fff;
+  font-weight: 700;
+  font-size: 30px;
+  color: #fff;
+}

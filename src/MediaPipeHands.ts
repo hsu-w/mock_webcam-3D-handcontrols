@@ -35,13 +35,17 @@ export class MediaPipeHands {
   private webcamContainer = document.querySelector(
     "#webcamContainer",
   ) as HTMLDivElement;
+  private score = document.querySelector("#score") as HTMLDivElement;
+  private enableWebcamButton = document.querySelector(
+    "#webcamButton",
+  ) as HTMLDivElement;
   private gameStart: boolean = false;
   private gameStamp: number = 0;
   private gameLevel: number = 1;
+  private gameScore: number = 0;
   constructor() {
     let handLandmarker: HandLandmarker | undefined = undefined;
     let runningMode: RunningMode = "IMAGE";
-    let enableWebcamButton: HTMLButtonElement | null = null;
     let webcamRunning: Boolean = false;
     let pozDataArr: Array<PozData> = [];
     const gui = new dat.GUI();
@@ -150,7 +154,7 @@ export class MediaPipeHands {
       // Check if webcam access is supported.
       const hasGetUserMedia = () => !!navigator.mediaDevices?.getUserMedia;
       const enableCam = () => {
-        if (!enableWebcamButton) return;
+        if (!this.enableWebcamButton) return;
         if (!handLandmarker) {
           console.log("Wait! objectDetector not loaded yet.");
           return;
@@ -158,10 +162,10 @@ export class MediaPipeHands {
 
         if (webcamRunning === true) {
           webcamRunning = false;
-          enableWebcamButton.innerText = "ENABLE PREDICTIONS";
+          this.enableWebcamButton.innerText = "ENABLE PREDICTIONS";
         } else {
           webcamRunning = true;
-          enableWebcamButton.innerText = "DISABLE PREDICTIONS";
+          this.enableWebcamButton.innerText = "DISABLE PREDICTIONS";
         }
 
         // getUsermedia parameters.
@@ -182,6 +186,7 @@ export class MediaPipeHands {
             circle_1.alpha = 0;
             circle_target.alpha = 0;
             this.gameStart = false;
+            this.gameScore = 0;
             ballReset();
           }
           // const videoTrack = stream.getVideoTracks()[0];
@@ -192,9 +197,8 @@ export class MediaPipeHands {
         });
       };
       if (hasGetUserMedia()) {
-        enableWebcamButton = document.querySelector("#webcamButton");
-        if (!enableWebcamButton) return;
-        enableWebcamButton.addEventListener("click", enableCam);
+        if (!this.enableWebcamButton) return;
+        this.enableWebcamButton.addEventListener("click", enableCam);
       } else {
         console.warn("getUserMedia() is not supported by your browser");
       }
@@ -278,14 +282,14 @@ export class MediaPipeHands {
             checkCircleCollision(circle_0, circle_target) ||
             checkCircleCollision(circle_1, circle_target)
           ) {
-            ballReset();
+            ballReset(true);
           }
           if (circle_target.y - 30 > app.screen.height) {
             ballReset();
           }
         }
       };
-      const ballReset = () => {
+      const ballReset = (point: boolean = false) => {
         this.gameStamp = 0;
         circle_target.y = -50;
         circle_target.x =
@@ -295,6 +299,21 @@ export class MediaPipeHands {
           circle_target.circle(0, 0, 30).fill(0xffff00);
         } else {
           circle_target.circle(0, 0, 30).fill(0xff0000);
+        }
+        if (point) {
+          this.gameScore += 100;
+        } else {
+          this.gameScore -= 100;
+        }
+        if (this.gameScore < 0) {
+          this.gameScore = 0;
+          if (this.gameStart) {
+            alert("失敗しました。再チャレンジします。");
+            this.gameStart = false;
+          }
+          // this.enableWebcamButton.click();
+        } else {
+          this.score.innerHTML = `${this.gameScore} pt`;
         }
       };
 

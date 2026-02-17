@@ -58,6 +58,7 @@
   left: 0;
   top: 0;
   z-index: 1;
+  opacity: 0.5;
 }
 #webcamContainer {
   position: relative;
@@ -66,8 +67,16 @@
   position: relative;
   width: 100%;
   aspect-ratio: 640 / 480;
+  transform: scaleX(-1);
 }
 .output_canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+}
+#canvas {
   position: absolute;
   width: 100%;
   height: 100%;

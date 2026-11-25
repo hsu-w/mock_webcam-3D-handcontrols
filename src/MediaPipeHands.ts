@@ -37,16 +37,22 @@ export class MediaPipeHands {
   ) as HTMLDivElement;
   private score = document.querySelector("#score") as HTMLDivElement;
   private enableWebcamButton = document.querySelector(
-    "#webcamButton",
+    // "#webcamButton",
+    "#gameStart",
   ) as HTMLDivElement;
+  private msgBox0 = document.querySelector("#msgBox0") as HTMLDivElement;
+  private msgBox1 = document.querySelector("#msgBox1") as HTMLDivElement;
+  private msgBox2 = document.querySelector("#msgBox2") as HTMLDivElement;
   private gameStart: boolean = false;
   private gameStamp: number = 0;
   private gameLevel: number = 1;
   private gameScore: number = 0;
+  private webcamRunning: boolean = false;
+  private no_reaction: boolean = true;
   constructor() {
     let handLandmarker: HandLandmarker | undefined = undefined;
     let runningMode: RunningMode = "IMAGE";
-    let webcamRunning: Boolean = false;
+    // let webcamRunning: Boolean = false;
     let pozDataArr: Array<PozData> = [];
     const gui = new dat.GUI();
     const param = {
@@ -160,12 +166,13 @@ export class MediaPipeHands {
           return;
         }
 
-        if (webcamRunning === true) {
-          webcamRunning = false;
-          this.enableWebcamButton.innerText = "ENABLE PREDICTIONS";
+        if (this.webcamRunning === true) {
+          this.webcamRunning = false;
+          // this.enableWebcamButton.innerText = "ENABLE PREDICTIONS";
         } else {
-          webcamRunning = true;
-          this.enableWebcamButton.innerText = "DISABLE PREDICTIONS";
+          this.webcamRunning = true;
+          this.msgBox0.classList.remove("showModal");
+          // this.enableWebcamButton.innerText = "DISABLE PREDICTIONS";
         }
 
         // getUsermedia parameters.
@@ -175,13 +182,15 @@ export class MediaPipeHands {
 
         // Activate the webcam stream.
         navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-          if (webcamRunning === true) {
-            alert("ゲーム開始します！\n同じ色のボールをキャッチしましょう！");
+          if (this.webcamRunning === true) {
+            // alert("ゲーム開始します！\n同じ色のボールをキャッチしましょう！");
+
+            this.msgBox1.classList.add("showModal");
             circle_target.alpha = 0.5;
             video.srcObject = stream;
             video.addEventListener("loadeddata", predictWebcam);
           } else {
-            alert("ゲーム終了！");
+            // alert("ゲーム終了！");
             circle_0.alpha = 0;
             circle_1.alpha = 0;
             circle_target.alpha = 0;
@@ -206,70 +215,71 @@ export class MediaPipeHands {
       let lastVideoTime = -1;
       let results: HandLandmarkerResult | undefined;
       const predictWebcam = async () => {
-        // videoContainer.style.aspectRatio = (
-        //   video.videoWidth / video.videoHeight
-        // ).toString();
-        // video.style.aspectRatio = (
-        //   video.videoWidth / video.videoHeight
-        // ).toString();
+        if (this.no_reaction == false) {
+          // videoContainer.style.aspectRatio = (
+          //   video.videoWidth / video.videoHeight
+          // ).toString();
+          // video.style.aspectRatio = (
+          //   video.videoWidth / video.videoHeight
+          // ).toString();
 
-        // Now let's start detecting the stream.
-        if (runningMode === "IMAGE") {
-          runningMode = "VIDEO";
-          if (!handLandmarker) return;
-          await handLandmarker.setOptions({ runningMode: "VIDEO" });
-        }
-        let startTimeMs = performance.now();
-        if (lastVideoTime !== video.currentTime) {
-          lastVideoTime = video.currentTime;
-          if (!handLandmarker) return;
-          results = handLandmarker.detectForVideo(video, startTimeMs);
-          // console.log(results.handednesses);
-          // console.log(results.handedness);
-        }
-
-        if (!results) return;
-
-        results.handednesses.forEach((handednessArray, index) => {
-          const hand = handednessArray[0];
-          const handType = hand.categoryName;
-          if (handType == "Left") {
-            if (!results) return;
-            circle_0.x =
-              app.screen.width -
-              results.landmarks[index][9].x * app.screen.width;
-            circle_0.y = results.landmarks[index][9].y * app.screen.height;
-            // console.log("Left");
-          } else {
-            if (!results) return;
-            circle_1.x =
-              app.screen.width -
-              results.landmarks[index][9].x * app.screen.width;
-            circle_1.y = results.landmarks[index][9].y * app.screen.height;
-            // console.log("Right");
+          // Now let's start detecting the stream.
+          if (runningMode === "IMAGE") {
+            runningMode = "VIDEO";
+            if (!handLandmarker) return;
+            await handLandmarker.setOptions({ runningMode: "VIDEO" });
           }
-        });
-        if (results.handednesses.length == 1) {
-          if (!this.gameStart) {
-            this.gameStart = true;
+          let startTimeMs = performance.now();
+          if (lastVideoTime !== video.currentTime) {
+            lastVideoTime = video.currentTime;
+            if (!handLandmarker) return;
+            results = handLandmarker.detectForVideo(video, startTimeMs);
+            // console.log(results.handednesses);
+            // console.log(results.handedness);
           }
-          if (results.handednesses[0][0].categoryName == "Right") {
+
+          if (!results) return;
+
+          results.handednesses.forEach((handednessArray, index) => {
+            const hand = handednessArray[0];
+            const handType = hand.categoryName;
+            if (handType == "Left") {
+              if (!results) return;
+              circle_0.x =
+                app.screen.width -
+                results.landmarks[index][9].x * app.screen.width;
+              circle_0.y = results.landmarks[index][9].y * app.screen.height;
+              // console.log("Left");
+            } else {
+              if (!results) return;
+              circle_1.x =
+                app.screen.width -
+                results.landmarks[index][9].x * app.screen.width;
+              circle_1.y = results.landmarks[index][9].y * app.screen.height;
+              // console.log("Right");
+            }
+          });
+          if (results.handednesses.length == 1) {
+            if (!this.gameStart) {
+              this.gameStart = true;
+            }
+            if (results.handednesses[0][0].categoryName == "Right") {
+              circle_1.alpha = 0.5;
+              circle_0.alpha = 0;
+            }
+            if (results.handednesses[0][0].categoryName == "Left") {
+              circle_1.alpha = 0;
+              circle_0.alpha = 0.5;
+            }
+          } else if (results.handednesses.length == 2) {
             circle_1.alpha = 0.5;
+            circle_0.alpha = 0.5;
+          } else if (results.handednesses.length == 0) {
+            circle_1.alpha = 0;
             circle_0.alpha = 0;
           }
-          if (results.handednesses[0][0].categoryName == "Left") {
-            circle_1.alpha = 0;
-            circle_0.alpha = 0.5;
-          }
-        } else if (results.handednesses.length == 2) {
-          circle_1.alpha = 0.5;
-          circle_0.alpha = 0.5;
-        } else if (results.handednesses.length == 0) {
-          circle_1.alpha = 0;
-          circle_0.alpha = 0;
         }
-
-        if (webcamRunning === true) {
+        if (this.webcamRunning === true) {
           window.requestAnimationFrame(predictWebcam);
         }
       };
@@ -308,8 +318,12 @@ export class MediaPipeHands {
         if (this.gameScore < 0) {
           this.gameScore = 0;
           if (this.gameStart) {
-            alert("失敗しました。再チャレンジします。");
+            console.log("失敗しました。再チャレンジします。");
+            circle_0.alpha = 0;
+            circle_1.alpha = 0;
+            this.msgBox2.classList.add("showModal");
             this.gameStart = false;
+            this.no_reaction = true;
           }
           // this.enableWebcamButton.click();
         } else {
@@ -342,6 +356,16 @@ export class MediaPipeHands {
           return false;
         }
       }
+      document.querySelector("#gameReadygo")?.addEventListener("click", () => {
+        this.msgBox1.classList.remove("showModal");
+        this.no_reaction = false;
+      });
+      document
+        .querySelector("#gameReadyagain")
+        ?.addEventListener("click", () => {
+          this.msgBox2.classList.remove("showModal");
+          this.no_reaction = false;
+        });
     })();
   }
 }

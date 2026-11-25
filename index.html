@@ -17,6 +17,42 @@
       <h2>スコア：</h2>
       <span id="score">0 pt</span>
     </div>
+    <div id="msgBox0" class="msgBox showModal">
+      <div class="modalContent">
+        <h1 class="modalTitle">ボールキャッチゲーム</h1>
+        <p class="modalP">
+          同じ色のボールをキャッチするゲームです！<br />
+          まずはWEBカメラをオンにしてください。<br />
+          カメラ映像が表示されたら、<br />
+          手を映してゲームスタート！
+        </p>
+        <div class="modalBtn">
+          <div id="gameStart" class="modalBtnIn">
+            WEBカメラをオン
+            <!-- <br /><span>（カメラオンにしてください。）</span> -->
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="msgBox1" class="msgBox">
+      <div class="modalContent">
+        <p class="modalP">手を映してゲームスタート！</p>
+        <div class="modalBtn">
+          <div id="gameReadygo" class="modalBtnIn">了解です！ゲーム開始！</div>
+        </div>
+      </div>
+    </div>
+    <div id="msgBox2" class="msgBox">
+      <div class="modalContent">
+        <p class="modalP">失敗しました。<br />再チャレンジしますか？</p>
+        <div class="modalBtn">
+          <div id="gameReadyagain" class="modalBtnIn">
+            OK！
+            <!-- <br /><span>（カメラオンにしてください。）</span> -->
+          </div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
